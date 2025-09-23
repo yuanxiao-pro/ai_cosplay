@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+//package edu.cust.mccat.huatuo.chat.proto;
+package edu.cust.secad.chat.proto;
+// 定义 ChatMessageProtocolForm 消息
+message ChatMessageProtocolForm {
+  string lastUid = 1;         // 上一条消息的unionId
+  string sendTime = 2;         // 发送时间（时间戳）
+  string pkgId = 3;          // 自增id，如果数据包需要拆分的话
+  string senderId = 4;        // 发送者id。用户或AI
+  string rcvId = 5;          // 接受者id。用户或AI
+  string unionId = 6;         // 用于配对发送者/接受者/topic id
+  int32 len = 7;       // 消息长度
+  // 0-文本 / 1-mp3 / 2-心跳 / 3-问候 msgType
+  int32 msgType = 8;    // 消息类型
+  bytes messageContent = 9;     // 消息内容 (字节数组)
+}

@@ -1,0 +1,52 @@
+server:
+  port: 6999
+netty:
+  websocket:
+    server:
+      port: 7000
+
+
+spring:
+  main:
+    #    允许bean定义被覆盖
+    allow-bean-definition-overriding: true
+  #  数据库
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST}/hua_tuo_fei_jiu?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 01wulianWANG11
+
+
+  #消息队列
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVER}
+    consumer:
+      group-id: test # 消费者组ID
+    common:
+      partitions: 1 #建立topic时的默认分区数
+      replicas: 1 #建立topic时的默认副本数
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password:
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          min-idle: 0
+          max-idle: 8
+
+
+knife4j:
+  enable: true
+  swagger-ui:
+    base-url: /doc
+
+file:
+#    basePath: "E:\\huatuo-project-file\\"
+  basePath: "/project/huatuofile/chatdata"
+
+snowflake:
+  machineId: 1  # 配置机器ID

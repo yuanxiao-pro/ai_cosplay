@@ -1,0 +1,76 @@
+server:
+  port: 6999
+netty:
+  websocket:
+    server:
+      port: 7000
+spring:
+  application:
+    name: chat
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+  main:
+    #    允许bean定义被覆盖
+    allow-bean-definition-overriding: true
+  #  数据库
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/ai_cosplay?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+
+  #消息队列
+  kafka:
+    bootstrap-servers: localhost:19092
+#    bootstrap-servers: 47.94.222.98:9092 # Kafka集群地址，单机模式下通常为localhost:9092
+#    bootstrap-servers: ${KAFKA_SERVER}
+    producer:
+      acks: all # 确认机制，all表示所有副本都需确认
+      key-serializer: org.apache.kafka.common.serialization.ByteArraySerializer # 消息键的序列化器
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer # 消息值的序列化器
+    consumer:
+      group-id: test # 消费者组ID
+    #      auto-offset-reset: earliest # 没有初始偏移量时，从头开始消费
+    #      enable-auto-commit: true # 启用自动提交
+    #      key-deserializer: org.apache.kafka.common.serialization.ByteArraySerializer # 消息键的反序列化器
+    #      value-deserializer: org.apache.kafka.common.serialization.ByteArraySerializer # 消息值的反序列化器
+    #      max-poll-records: 10 # 每次轮询最大获取的记录数
+    #    listener:
+    #      missing-topics-fatal: true # 如果主题不存在，启动失败
+    #      type: single # 单条消费模式
+    #      concurrency: 1 # 单线程消费
+    common:
+      partitions: 1 #建立topic时的默认分区数
+      replicas: 3 #建立topic时的默认副本数
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 123456
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          min-idle: 0
+          max-idle: 8
+    mongodb:
+      host: localhost
+      port: 27017
+      database: chatdb
+      username: root
+      password: 123456
+      authentication-database: admin
+
+
+knife4j:
+  enable: true
+  swagger-ui:
+    base-url: /doc
+
+file:
+#    basePath: "D:\\huatuo-project-file\\"
+  basePath: "/project/huatuofile/chatdata"
+
+snowflake:
+  machineId: 1  # 配置机器ID
