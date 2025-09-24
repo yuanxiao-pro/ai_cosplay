@@ -48,9 +48,9 @@ class WebSocketManager {
 			var receivedMessage = ChatMessageProtocolForm.decode(binaryData); // receivedMessage为实际消息
 			
 			// console.log('接受消息', receivedMessage);
-			var messageType = receivedMessage.messageType;
+			var messageType = receivedMessage.msgType;
 			var senderId = receivedMessage.senderId;
-			var groupId = receivedMessage.groupId;
+			var groupId = receivedMessage.unionId; // 使用unionId作为groupId
 			var sendTime = receivedMessage.sendTime;
 			
 			var decoder = new TextDecoder();
@@ -171,162 +171,81 @@ class WebSocketManager {
 		});
 	}
 	closeWebSocket() {
-		if (this.isWebSocketConnected()) {
-			// isConnecting = false;
-			uni.closeSocket({
-				success: () => {
-					this.socket = null;
-					console.log("socket 置为空");
-					// 关闭定时器
-					clearTimeout(this.heartbeatTimer);
-					this.heartbeatTimer = null;
-					console.log("关闭定时器 heartbeatTimer");
-					clearTimeout(this.reconnectTimer);
-					this.reconnectTimer = null;
-					console.log("关闭定时器 reconnectTimer");
-					this.isConnected = false;
-					reconnectAttempts = 0;
-					// store.commit("setIsLogout"); // 设置为登出，方便小程序切屏和切回时判断是否需要重连ws（App.vue）
-					uni.reLaunch({ //跳转到主页，并携带账号参数
-						url: '/components/login/login'
-					})
-					console.log("WebSocket 连接已被客户端主动关闭");
-				},
-				fail: (err) => {
-					console.error("关闭 WebSocket 失败", err);
-				}
-			});
-		} else {
-			clearTimeout(this.heartbeatTimer);
-			this.heartbeatTimer = null;
-			console.log("关闭定时器 heartbeatTimer", this.heartbeatTimer);
+		store.commit('setClose'); // 标记为主动关闭
+		if (this.socket) {
+			this.socket.close();
+			this.socket = null;
+		}
+		this.isConnected = false;
+		// 清除重连定时器
+		if (this.reconnectTimer) {
 			clearTimeout(this.reconnectTimer);
 			this.reconnectTimer = null;
-			console.log("关闭定时器 reconnectTimer", this.reconnectTimer);
-			this.isConnected = false;
-			reconnectAttempts = 0;
-			console.log("WebSocket已关闭！");
-			// store.commit("setIsLogout"); // 设置为登出，方便小程序切屏和切回时判断是否需要重连ws（App.vue）
-			uni.reLaunch({ //跳转到主页，并携带账号参数
-				// url: '/components/login/login',
-				url: '/pages/login/login'
-			})
 		}
-	}
-	reconnectWebSocket() {
-		console.log("重连前检查WS是否已连接", this.isWebSocketConnected());
-		if(this.isWebSocketConnected() === true) {
-			console.log("WS已连接,不允许重连");
-			return;
-		}
-		console.log("检查可否重连", reconnectAttempts, store.state.MAX_RECONNECT_ATTEMPTS, this.isWebSocketConnected());
-		if(reconnectAttempts > store.state.MAX_RECONNECT_ATTEMPTS && this.isWebSocketConnected() === false){
-		// if(reconnectAttempts >= store.state.MAX_RECONNECT_ATTEMPTS){
-			console.log("重连次数耗尽", reconnectAttempts, store.state.MAX_RECONNECT_ATTEMPTS);
-			uni.showToast({
-				duration: 5000,
-				title: "重新连接失败，请重新登录",
-				icon: 'error'
-			})
-			this.closeWebSocket();
-			return
-		}
-		reconnectAttempts++;
-		console.log("开始第" + reconnectAttempts + "次重连");
-		uni.showToast({
-			duration: 3000,
-			title: "第" + reconnectAttempts + "次尝试重连",
-			icon: "loading"
-		})
-		console.log("第" + reconnectAttempts + "次清除重连定时器");
-		clearTimeout(this.reconnectTimer);
-		
-		this.reconnectTimer  = setTimeout(() => {
-			console.log("进入第" + reconnectAttempts + "次清除重连定时器");
-			this.connect();
-			this.relogin();
-		}, store.state.RECONNECT_GAP_TIME * reconnectAttempts);
-	}
-	isWebSocketConnected() {
-		if (this.socket != null && this.socket.readyState === 1) {
-			return true; // readyState === 1 表示 WebSocket 已连接
-		} else {
-			return false;
+		// 清除心跳定时器
+		if (this.heartbeatTimer) {
+			clearInterval(this.heartbeatTimer);
+			this.heartbeatTimer = null;
 		}
 	}
 	
-	sendHello() {
-		console.log("store.state.userInfo.userId", store.state.userInfo.userId);
-		var hello_content = ChatMessageProtocolForm.create({
-			senderId: store.state.userInfo.userId,
-			// groupId: 0,
-			messageType: store.state.MSGTYPE_HELLO,
-			// messageContent: new Uint8Array(store.state.HELLO),
-			messageContent: new TextEncoder().encode(store.state.HELLO), // 二进制表示
-			sendTime: Date.now(),
-		});
+	reconnectWebSocket() {
+		if (reconnectAttempts >= store.state.MAX_RECONNECT_ATTEMPTS) {
+			console.log("已达到最大重连次数，停止重连");
+			uni.showToast({
+				duration: 5000,
+				icon: "error",
+				title: "连接失败，请检查网络"
+			});
+			return;
+		}
 		
-		var binaryData = ChatMessageProtocolForm.encode(hello_content).finish();
-		binaryData = binaryData.slice().buffer;
-		this.sendSocketMessage(binaryData,
-			() => {
-				console.log('消息发送成功');
-				// store.commit("setIsHello");
-				store.commit("resetClose"); // 连接成功，说明设置ws为”非主动关闭“
-				store.commit('setIsLogin'); // setIsLogin统一在发送hello消息成功后执行，防止出现登陆成功但是websocket连接失败的情况
-				this.isConnected = true;
-				// 启动定时器，定时向服务器发送ping
-				this.startPingTimer()
-				store.dispatch('updateUserLocation'); // 执行更新位置
-				const pages = getCurrentPages();
-				const currentPage = pages[pages.length - 1].route;
-				console.log(currentPage);
-				if(currentPage === 'pages/login/login' || currentPage === 'pages/sign/sign'){ // 跳转到小程序主页
-					uni.reLaunch({
-						url: '/pages/index/index'
-					})
-				}
-			},
-			(err) => {
-				console.error('CPC主页问候消息发送失败', err);
-				// 退回到登录页面，不允许进入应用
-				uni.showToast({
-					duration: 5000,
-					title: "确认连接失败，请返回重新登录",
-					icon: 'error'
-				})
-				this.closeWebSocket();
+		console.log(`第 ${reconnectAttempts + 1} 次重连...`);
+		reconnectAttempts++;
+		
+		this.reconnectTimer = setTimeout(() => {
+			this.connect();
+		}, store.state.RECONNECT_GAP_TIME);
+	}
+	
+	isWebSocketConnected() {
+		return this.socket && this.isConnected;
+	}
+	
+	sendHello() {
+		const helloMessage = ChatMessageProtocolForm.createGreetingMessage(
+			store.state.userInfo.userId,
+			'server'
+		);
+		const binaryData = ChatMessageProtocolForm.encode(helloMessage);
+		
+		this.sendSocketMessage(binaryData, () => {
+			console.log("Hello消息发送成功");
+			this.isConnected = true;
+			reconnectAttempts = 0; // 重置重连次数
+			store.commit('resetClose'); // 重置关闭标志
+			store.commit('setIsLogin'); // 设置登录状态
+			this.startPingTimer(); // 开始心跳
+		}, (err) => {
+			console.error("Hello消息发送失败:", err);
 		});
 	}
+	
 	sendPing() {
-		console.log("store.state.userInfo.userId", store.state.userInfo.userId);
-		console.log(store.state.PING+"%%%%%MP%%%%%"+store.state.userInfo.userId);
-		var ping_content = ChatMessageProtocolForm.create({
-			senderId: store.state.userInfo.userId,
-			// groupId: 0,
-			messageType: store.state.MSGTYPE_PING,
-			// messageContent: new Uint8Array(store.state.PING+"%%%%%MP%%%%%"+store.state.userInfo.userId),
-			messageContent: new TextEncoder().encode(store.state.PING+"%%%%%MP%%%%%"+store.state.userInfo.userId), // 二进制表示
-			sendTime: Date.now(),
-		});
+		if (!this.isConnected) return;
 		
-		var binaryData = ChatMessageProtocolForm.encode(ping_content).finish();
-		binaryData = binaryData.slice().buffer;
-		if(this.isWebSocketConnected()){
-			this.sendSocketMessage(binaryData,
-				() => {
-					console.log('Ping消息发送成功');
-				},
-				(err) => {
-					console.error('CPC主页Ping消息发送失败', err);
-					// /* 等待onClose触发后再重连 */
-					
-					/* 说明channel断了，直接执行重连 */
-					this.reconnectWebSocket(); // reconnectWebSocket会重连3次，都失败的话就回到登陆页面
-			});
-		} else {
-			this.reconnectWebSocket(); // reconnectWebSocket会重连3次，都失败的话就回到登陆页面
-		}
+		const pingMessage = ChatMessageProtocolForm.createHeartbeatMessage(
+			store.state.userInfo.userId,
+			'server'
+		);
+		const binaryData = ChatMessageProtocolForm.encode(pingMessage);
+		
+		this.sendSocketMessage(binaryData, () => {
+			console.log("Ping消息发送成功");
+		}, (err) => {
+			console.error("Ping消息发送失败:", err);
+			store.commit('incrementPingMissing');
+		});
 	}
 	// 启动Ping定时器
 	startPingTimer() {

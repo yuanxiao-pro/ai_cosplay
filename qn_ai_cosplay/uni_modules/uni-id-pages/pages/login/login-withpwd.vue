@@ -37,6 +37,8 @@
 
 <script>
 	import mixin from '@/uni_modules/uni-id-pages/common/login-page.mixin.js';
+	import wsInstance from '@/WSInstance';
+	import store from '@/store.js'; // 引入 Vuex store
 	const uniIdCo = uniCloud.importObject("uni-id-co", {
 		errorOptions: {
 			type: 'toast'
@@ -140,8 +142,13 @@
 				// 	// 	console.error(e);
 				// 	// }
 				// });
+				
 				uniIdCo.login(data).then(e => {
 					this.loginSuccess(e)
+					// 确保用户信息保存到store后再连接WebSocket
+					this.$nextTick(() => {
+						wsInstance.connect()
+					})
 				}).catch(e => {
 					if (e.errCode == 'uni-id-captcha-required') {
 						this.needCaptcha = true

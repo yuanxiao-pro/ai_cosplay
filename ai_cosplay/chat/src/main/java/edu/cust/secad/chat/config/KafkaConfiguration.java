@@ -65,6 +65,9 @@ public class KafkaConfiguration {
     public AdminClient adminClient() {
         Map<String, Object> config = new HashMap<>();
         config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootStrapServers);
+        config.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, 15000);
+        config.put(AdminClientConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG, 30000);
+        config.put(AdminClientConfig.RETRIES_CONFIG, 3);
         return AdminClient.create(config);
     }
 

@@ -1,8 +1,34 @@
 {
-  "hash": "0f692285",
-  "configHash": "1cba8169",
-  "lockfileHash": "e3b0c442",
-  "browserHash": "7ec7c10d",
-  "optimized": {},
-  "chunks": {}
+  "hash": "24bb2d6c",
+  "configHash": "f97b1dba",
+  "lockfileHash": "8de27b80",
+  "browserHash": "a0c69e5e",
+  "optimized": {
+    "vuex-persistedstate": {
+      "src": "../../../../../node_modules/vuex-persistedstate/dist/vuex-persistedstate.es.js",
+      "file": "vuex-persistedstate.js",
+      "fileHash": "15288b8b",
+      "needsInterop": false
+    },
+    "protobufjs/minimal": {
+      "src": "../../../../../node_modules/protobufjs/minimal.js",
+      "file": "protobufjs_minimal.js",
+      "fileHash": "7f173475",
+      "needsInterop": true
+    },
+    "protobufjs/light": {
+      "src": "../../../../../node_modules/protobufjs/light.js",
+      "file": "protobufjs_light.js",
+      "fileHash": "f7d95548",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "chunk-EW3BWPBL": {
+      "file": "chunk-EW3BWPBL.js"
+    },
+    "chunk-Y2F7D3TJ": {
+      "file": "chunk-Y2F7D3TJ.js"
+    }
+  }
 }

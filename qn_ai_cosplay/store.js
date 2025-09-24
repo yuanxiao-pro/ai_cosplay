@@ -1,19 +1,9 @@
 import {
 	createStore
 } from 'vuex';
-import {
-	AMapWX
-} from './amap-wx.130.js';
-import {
-	reconnectWebSocket,
-	isWebSocketConnected,
-	initWebSocket,
-	closeWebSocket
-} from './websocket.js';
+
 import createPersistedState from 'vuex-persistedstate';
 import storageAdapter from './storageAdapter'; // 引入自定义适配器
-import SparkMD5 from 'spark-md5'; // hash工具
-// import storages from 'mp-storage';
 const store = createStore({
 	state: {
 		/* websocket相关的常量 */
@@ -25,8 +15,8 @@ const store = createStore({
 		PING : "ping",
 		PING_GAP_TIME: 10000,
 		
-		HTTPS: 'https://www.rtxgzngl.cn:',
-		WSS: 'wss://www.rtxgzngl.cn:',
+		HTTPS: 'http://localhost:',
+		WSS: 'ws://localhost:',
 		CITY: '',
 		cpcUsrContact: '',
 		//调起摄像头或相册的标志位，用于防止调起摄像头或图片时触发App.vue的onHide事件，避免退出登录
@@ -147,6 +137,9 @@ const store = createStore({
 		},
 		resetPingMissing(state) {
 			state.ping_missing = 0;
+		},
+		incrementPingMissing(state) {
+			state.ping_missing++;
 		},
 		resetIsHello(state) {
 			state.isHello = false;
@@ -427,138 +420,6 @@ const store = createStore({
 				}
 			}
 		},
-
-		// async sendPing({
-		// 	commit,
-		// 	state
-		// }) {
-		// 	try {
-		// 		const app = getApp();
-		// 		uni.request({
-		// 			url: store.state.HTTPS + '/api/common/callchatmodule/ping',
-		// 			method: 'post', // 根据接口要求选择请求方式
-		// 			dataType: 'json',
-		// 			data: {
-		// 				userId: store.state.userInfo.userId,
-		// 				ping: "ping",
-		// 			},
-		// 			success: (res) => {
-		// 				if (res.data.code === 201 && res.data.data === "disable") {
-		// 					store.state.ping_missing++;
-		// 					console.log("success store监控：当前缺失心跳数", store.state.ping_missing);
-		// 				}
-		// 			},
-		// 			fail: (err) => {
-		// 				store.state.ping_missing++;
-		// 				console.log("fail store监控：当前缺失心跳数", store.state.ping_missing);
-		// 				uni.showToast({
-		// 					duration: 2000,
-		// 					title: "网络不稳定",
-		// 					icon: "none"
-		// 				})
-		// 			}
-		// 		});
-		// 	} catch (error) {
-		// 		console.error(error);
-		// 	}
-		// },
-		
-		// sendHello({
-		// 	commit,
-		// 	state
-		// }) {
-		// 	const app = getApp();
-		// 	return new Promise((resolve, reject) => {
-		// 		uni.request({
-		// 			url: store.state.HTTPS + '/api/common/callchatmodule/hello',
-		// 			method: 'post', // 根据接口要求选择请求方式
-		// 			dataType: 'json',
-		// 			data: {
-		// 				userId: store.state.userInfo.userId,
-		// 				ping: "hello",
-		// 			},
-		// 			success: (res) => {
-		// 				if (res.data.code === 201 && res.data.data === "hello_disable") {
-		// 					store.state.isHello = false;
-		// 					if (isWebSocketConnected() === false) {
-		// 						uni.showToast({
-		// 							duration: 5000,
-		// 							title: "确认连接失败，请返回重新登录",
-		// 							icon: 'error'
-		// 						})
-		// 						closeWebSocket();
-		// 						store.commit("resetIsHello")
-		// 						store.commit("resetPingMissing")
-		// 						// store.commit("setIsLogout");
-		// 						uni.reLaunch({ //跳转到主页，并携带账号参数
-		// 							url: '/pages/login/login'
-		// 						})
-		// 					}
-		// 				} else {
-		// 					store.state.isHello = true;
-		// 					store.commit("resetPingMissing")
-		// 				}
-		// 				resolve(res); // 请求成功，调用 resolve
-		// 			},
-		// 			fail: (err) => {
-		// 				store.state.isHello = false;
-		// 				if (isWebSocketConnected() === false) {
-		// 					uni.showToast({
-		// 						duration: 5000,
-		// 						title: "确认连接失败，请返回重新登录",
-		// 						icon: 'error'
-		// 					})
-		// 					closeWebSocket();
-		// 					store.commit("resetIsHello")
-		// 					store.commit("resetPingMissing")
-		// 					store.commit("setIsLogout")
-		// 					uni.reLaunch({ //跳转到主页，并携带账号参数
-		// 						url: '/pages/login/login'
-		// 					})
-		// 				}
-		// 				console.log("请求失败");
-		// 				reject(err); // 请求失败，调用 reject
-		// 			}
-		// 		});
-		// 	});
-		// },
-
-		// // 启动Ping定时器
-		// async startPingTimer({
-		// 	commit
-		// }) {
-		// 	console.log("开启ping定时器");
-		// 	const timer = setInterval(() => {
-		// 		if (store.state.isLogin) {
-		// 			// console.log("watch 用户已登录");
-		// 			// console.log("发送ping请求");
-		// 			store.dispatch('sendPing'); // 执行更新位置
-		// 			if (store.state.ping_missing == 5 || store.state.ping_missing == 10) {
-		// 				uni.showToast({
-		// 					duration: 5000,
-		// 					title: "网络不稳定",
-		// 					icon: 'none'
-		// 				})
-		// 			}
-		// 			if (store.state.ping_missing >= 11 && store.state.isLogin === true) {
-		// 				uni.showToast({
-		// 					duration: 5000,
-		// 					title: "连接失败，请重新登录",
-		// 					icon: 'error'
-		// 				})
-		// 				closeWebSocket();
-		// 				store.commit("resetPingMissing")
-		// 				store.commit("setIsLogout");
-		// 				uni.reLaunch({
-		// 					url: '/pages/login/login'
-		// 				})
-		// 			}
-		// 		} else {
-		// 			console.log("watch 用户未登录");
-		// 		}
-		// 	}, 10000);
-		// 	store.commit('setPingTimer', timer); // 将定时器引用存储到 Vuex
-		// }
 	},
 })
 export default store

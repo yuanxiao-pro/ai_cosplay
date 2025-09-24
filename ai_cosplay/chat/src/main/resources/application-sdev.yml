@@ -1,0 +1,69 @@
+server:
+  port: 6999
+netty:
+  websocket:
+    server:
+      port: 7000
+spring:
+  application:
+    name: chat
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/ai_cosplay?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+
+  # 简化的Kafka配置 - 仅测试单节点
+  kafka:
+    bootstrap-servers: localhost:19092
+    producer:
+      acks: 1
+      retries: 0
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      request-timeout-ms: 10000
+      delivery-timeout-ms: 15000
+    consumer:
+      group-id: test-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      session-timeout-ms: 10000
+    admin:
+      fail-fast: false
+      properties:
+        request.timeout.ms: 10000
+        connections.max.idle.ms: 30000
+    # 通用配置（用于创建topic）
+    common:
+      partitions: 6 # 默认分区数（集群环境）
+      replicas: 3 # 副本数（5节点集群，设为3）
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 123456
+    mongodb:
+      host: localhost
+      port: 27017
+      database: chatdb
+      username: root
+      password: 123456
+      authentication-database: admin
+
+knife4j:
+  enable: true
+  swagger-ui:
+    base-url: /doc
+
+file:
+  basePath: "/project/huatuofile/chatdata"
+
+snowflake:
+  machineId: 1 

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../node_modules/protobufjs/minimal.js"],
+  "sourcesContent": ["// minimal library entry point.\n\n\"use strict\";\nmodule.exports = require(\"./src/index-minimal\");\n"],
+  "mappings": ";;;;;;;;AAAA;AAAA;AAGA,WAAO,UAAU;AAAA;AAAA;",
+  "names": []
+}

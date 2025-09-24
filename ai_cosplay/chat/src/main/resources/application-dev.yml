@@ -22,27 +22,60 @@ spring:
 
   #消息队列
   kafka:
-    bootstrap-servers: localhost:19092
-#    bootstrap-servers: 47.94.222.98:9092 # Kafka集群地址，单机模式下通常为localhost:9092
-#    bootstrap-servers: ${KAFKA_SERVER}
+    # Kafka集群配置 - 完整的Docker集群外部地址
+    bootstrap-servers: 172.20.0.1:19092,172.20.0.1:29092,172.20.0.1:39092,172.20.0.1:49092,172.20.0.1:59092
+    # 生产者配置
     producer:
-      acks: all # 确认机制，all表示所有副本都需确认
-      key-serializer: org.apache.kafka.common.serialization.ByteArraySerializer # 消息键的序列化器
-      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer # 消息值的序列化器
+      acks: all # 确认机制，all表示所有副本都需确认（集群环境推荐）
+      retries: 3 # 重试次数
+      batch-size: 16384 # 批处理大小
+      linger-ms: 5 # 延迟发送时间（毫秒）
+      buffer-memory: 33554432 # 缓冲区内存大小
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      # 超时配置
+      request-timeout-ms: 30000 # 请求超时
+      delivery-timeout-ms: 120000 # 交付超时
+      metadata-max-age-ms: 300000 # 元数据最大生存时间
+      # 集群环境下的额外配置
+      max-in-flight-requests-per-connection: 5 # 每个连接的最大未确认请求数
+      enable-idempotence: true # 启用幂等性（防止重复消息）
+    # 消费者配置
     consumer:
-      group-id: test # 消费者组ID
-    #      auto-offset-reset: earliest # 没有初始偏移量时，从头开始消费
-    #      enable-auto-commit: true # 启用自动提交
-    #      key-deserializer: org.apache.kafka.common.serialization.ByteArraySerializer # 消息键的反序列化器
-    #      value-deserializer: org.apache.kafka.common.serialization.ByteArraySerializer # 消息值的反序列化器
-    #      max-poll-records: 10 # 每次轮询最大获取的记录数
-    #    listener:
-    #      missing-topics-fatal: true # 如果主题不存在，启动失败
-    #      type: single # 单条消费模式
-    #      concurrency: 1 # 单线程消费
+      group-id: ai-cosplay-chat-group # 消费者组ID
+      auto-offset-reset: earliest # 从最早的消息开始消费
+      enable-auto-commit: true # 启用自动提交偏移量
+      auto-commit-interval-ms: 1000 # 自动提交间隔
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      max-poll-records: 500 # 每次轮询最大获取的记录数
+      session-timeout-ms: 30000 # 会话超时时间
+      heartbeat-interval-ms: 3000 # 心跳间隔
+      # JSON反序列化信任包配置
+      properties:
+        spring.json.trusted.packages: "edu.cust.secad.chat,edu.cust.secad.model"
+    # 监听器配置
+    listener:
+      missing-topics-fatal: false # 如果主题不存在，不让启动失败
+      type: batch # 批量消费模式（可选：single, batch）
+      concurrency: 3 # 并发消费者数量
+      ack-mode: batch # 确认模式
+    # 管理客户端配置
+    admin:
+      fail-fast: false # 不快速失败，允许重试
+      properties:
+        request.timeout.ms: 30000 # 管理操作超时时间
+        connections.max.idle.ms: 60000 # 连接最大空闲时间
+        metadata.max.age.ms: 30000 # 元数据最大生存时间
+        reconnect.backoff.ms: 1000 # 重连退避时间
+        retry.backoff.ms: 1000 # 重试退避时间
+        # 添加额外的连接配置
+        socket.connection.setup.timeout.ms: 10000
+        socket.connection.setup.timeout.max.ms: 30000
+    # 通用配置（用于创建topic）
     common:
-      partitions: 1 #建立topic时的默认分区数
-      replicas: 3 #建立topic时的默认副本数
+      partitions: 6 # 默认分区数（集群环境）
+      replicas: 3 # 副本数（5节点集群，设为3）
   data:
     redis:
       host: localhost
@@ -69,7 +102,7 @@ knife4j:
     base-url: /doc
 
 file:
-#    basePath: "D:\\huatuo-project-file\\"
+  # basePath: "D:\\huatuo-project-file\\"
   basePath: "/project/huatuofile/chatdata"
 
 snowflake:

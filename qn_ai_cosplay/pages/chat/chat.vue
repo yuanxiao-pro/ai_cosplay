@@ -134,6 +134,9 @@
 </template>
 
 <script>
+import mixin from '@/uni_modules/uni-id-pages/common/login-page.mixin.js';
+import wsInstance from '@/WSInstance';
+import store from '@/store.js'; // 引入 Vuex store
 export default {
   name: 'ChatPage',
   data() {
@@ -226,7 +229,9 @@ export default {
     this.initAudio();
     this.scrollToBottom();
   },
-  
+  onShow() {
+  	wsInstance.connect();
+  },
   onUnload() {
     this.cleanupAudio();
   },
